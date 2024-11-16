@@ -18,7 +18,7 @@ class Sala{
       id: json['id'] as int,
       dono: json['dono'] as String,
       criacao: json['criacao'] != null ? DateTime.parse(json['criacao'] as String) : null,
-      password: json['password'] as String?,
+      password: json['senha'] as String?,
       jogadores: (json['jogador_set'] as List<dynamic>).map((e) => e as String).toList(),
     );
   }

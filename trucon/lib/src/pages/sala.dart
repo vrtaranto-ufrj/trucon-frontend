@@ -52,6 +52,7 @@ class _SalasListPageState extends State<SalasListPage> {
     try {
       final joinedSala = await widget.conexao.getSala(sala.id);
       if (mounted) {
+        widget.jogador.salaId = sala.id;
         await Navigator.push(
           context,
           MaterialPageRoute(
@@ -78,8 +79,9 @@ class _SalasListPageState extends State<SalasListPage> {
     }
     if (mounted) {
       final passwordController = TextEditingController();
-      await showDialog<String>(
+      final result = await showDialog<String>(
         context: context,
+        barrierDismissible: false,
         builder: (context) => AlertDialog(
           title: Text('Enter password for ${sala.nomeSalas}'),
           content: TextField(
@@ -102,12 +104,14 @@ class _SalasListPageState extends State<SalasListPage> {
           ],
         ),
       );
+      if (result == null) return;
       password = passwordController.text;
     }
 
     try {
       final joinedSala = await widget.conexao.joinSala(sala.id, password);
       if (joinedSala != null && mounted) {
+        widget.jogador.salaId = sala.id;
         await Navigator.push(
           context,
           MaterialPageRoute(
@@ -134,8 +138,9 @@ class _SalasListPageState extends State<SalasListPage> {
     late final String? password;
     if (mounted) {
       final passwordController = TextEditingController();
-      await showDialog<String>(
+      final result = await showDialog<String>(
         context: context,
+        barrierDismissible: false,
         builder: (context) => AlertDialog(
           title: const Text('Enter password for new room'),
           content: TextField(
@@ -158,12 +163,14 @@ class _SalasListPageState extends State<SalasListPage> {
           ],
         ),
       );
+      if (result == null) return;
       password = passwordController.text;
     }
 
     try {
       final createdSala = await widget.conexao.createSala(password);
       if (createdSala != null && mounted) {
+        widget.jogador.salaId = createdSala.id;
         await Navigator.push(
           context,
           MaterialPageRoute(
@@ -194,7 +201,15 @@ class _SalasListPageState extends State<SalasListPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () => _showPasswordDialogCreate(),
+            onPressed: () {
+              if (widget.jogador.salaId != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Você já está em uma sala')),
+                );
+                return;
+              }
+              _showPasswordDialogCreate();
+            },
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -315,10 +330,10 @@ class _SalaDetailPageState extends State<SalaDetailPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Room age: $_timeAlive'),
-                        if (widget.sala.password?.isNotEmpty == true)
-                          Text('Password: ${widget.sala.password}'),
-                        Text('Players: ${widget.sala.quantidadeJogadores}/4'),
+                        Text('Criado há: $_timeAlive'),
+                        if (widget.sala.password != null && widget.sala.password!.isNotEmpty)
+                          Text('Senha: ${widget.sala.password}'),
+                        Text('Jogadores: ${widget.sala.quantidadeJogadores}/4'),
                       ],
                     ),
                   ),

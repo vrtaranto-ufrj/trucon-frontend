@@ -113,7 +113,7 @@ class Conexao {
         'Authorization': 'Bearer $accessToken',
       },
       body: {
-        'password': password,
+        'senha': password,
       },
     );
 
