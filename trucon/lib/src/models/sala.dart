@@ -23,6 +23,12 @@ class Sala{
     );
   }
 
+  void update(Sala sala) {
+    jogadores.clear();
+    jogadores.addAll(sala.jogadores);
+    
+  }
+
   void addJogador(String jogador) {
     jogadores.add(jogador);
   }

@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import '../models/sala.dart';
 import '../models/jogador.dart';
 import '../auth/auth.dart';
@@ -34,6 +37,11 @@ class _SalasListPageState extends State<SalasListPage> {
       if (mounted) {
         setState(() {
           _salas = salas ?? [];
+          widget.jogador.salaId = _salas.firstWhere(
+            (sala) => sala.jogadores.contains(widget.jogador.username),
+            orElse: () => Sala(id: -1, dono: '', jogadores: []),
+          ).id;
+          widget.jogador.salaId = widget.jogador.salaId == -1 ? null : widget.jogador.salaId;
           _isLoading = false;
         });
       }
@@ -270,10 +278,21 @@ class SalaDetailPage extends StatefulWidget {
 class _SalaDetailPageState extends State<SalaDetailPage> {
   late Timer _timer;
   late String _timeAlive;
+  late WebSocketChannel channel;
 
   @override
   void initState() {
     super.initState();
+    channel = WebSocketChannel.connect(
+      Uri.parse('ws://localhost:8000/ws/salas/${widget.sala.id}/'),
+    );
+
+    channel.stream.listen((message) {
+      if (mounted) {
+        _handleWebSocketMessage(message);
+      }
+    });
+
     _updateTimeAlive();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _updateTimeAlive());
   }
@@ -282,6 +301,41 @@ class _SalaDetailPageState extends State<SalaDetailPage> {
   void dispose() {
     _timer.cancel();
     super.dispose();
+  }
+
+  // Função para processar mensagens do WebSocket
+  void _handleWebSocketMessage(String message) async {
+    // Faça uma nova chamada à API para obter as informações atualizadas da sala
+    final jsonMessage = jsonDecode(message);
+
+    if (jsonMessage['message'] == 'delete') {
+      if (mounted) {
+        widget.jogador.salaId = null;
+        widget.salas.remove(widget.sala);
+        Navigator.pop(context);
+        await showDialog<String>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('A sala foi deletada pelo dono'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+
+    final updatedSala = await widget.conexao.getSala(widget.sala.id);
+
+    if (mounted) {
+      setState(() {
+        widget.sala.update(updatedSala);
+      });
+    }
   }
 
   void _updateTimeAlive() {

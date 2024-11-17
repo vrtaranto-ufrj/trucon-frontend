@@ -87,6 +87,13 @@ class Conexao {
       return data.map((e) => Sala.fromJson(e as Map<String, dynamic>)).toList();
     }
 
+    final dataErro = jsonDecode(response.body);
+
+    if (response.statusCode == 401 && dataErro['code'] == 'token_not_valid') {
+      refreshAccessToken();
+      return getSalas();
+    }
+
     return null;
   }
 
@@ -98,8 +105,14 @@ class Conexao {
       }
     );
 
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 401 && data['code'] == 'token_not_valid') {
+      refreshAccessToken();
+      return getSala(id);
+    }
+
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
       return Sala.fromJson(data);
     }
 
@@ -117,8 +130,14 @@ class Conexao {
       },
     );
 
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 401 && data['code'] == 'token_not_valid') {
+      refreshAccessToken();
+      return createSala(password);
+    }
+
     if (response.statusCode == 201) {
-      final data = jsonDecode(response.body);
       return Sala.fromJson(data);
     }
     
@@ -133,9 +152,18 @@ class Conexao {
       }
     );
 
-    if (response.statusCode != 204) {
-      throw Exception('Falha ao deletar sala');
+    if (response.statusCode == 204) {
+      return;
     }
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 401 && data['code'] == 'token_not_valid') {
+      refreshAccessToken();
+      return deleteSala(id);
+    }
+
+
   }
 
   Future<Sala?> joinSala(int id, String? password) async {
@@ -150,6 +178,12 @@ class Conexao {
     );
 
     final data = jsonDecode(response.body);
+
+    if (response.statusCode == 401 && data['code'] == 'token_not_valid') {
+      refreshAccessToken();
+      return joinSala(id, password);
+    }
+
     if (response.statusCode == 200) {
       
       return Sala.fromJson(data);
@@ -166,8 +200,14 @@ class Conexao {
       }
     );
 
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 401 && data['code'] == 'token_not_valid') {
+      refreshAccessToken();
+      return getJogador();
+    }
+
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
       return Jogador.fromJson(data);
     }
 
@@ -181,6 +221,13 @@ class Conexao {
         'Authorization': 'Bearer $accessToken',
       }
     );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 401 && data['code'] == 'token_not_valid') {
+      refreshAccessToken();
+      return leaveSala(id);
+    }
 
     if (response.statusCode != 204) {
       throw Exception(response.body);
